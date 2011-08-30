@@ -8,10 +8,10 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("CNAPDownloader")> 
+<Assembly: AssemblyTitle("DownloaderSvc")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("Microsoft")> 
-<Assembly: AssemblyProduct("CNAPDownloader")> 
+<Assembly: AssemblyProduct("DownloaderSvc")> 
 <Assembly: AssemblyCopyright("Copyright © Microsoft 2011")> 
 <Assembly: AssemblyTrademark("")> 
 
