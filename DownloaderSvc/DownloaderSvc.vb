@@ -44,7 +44,7 @@ Public Class DownloaderSvc
 
 
             Dim oCallback As New TimerCallback(AddressOf OnTimedEvent)
-            timer1 = New System.Threading.Timer(oCallback, Nothing, 5000, 60000)
+            timer1 = New System.Threading.Timer(oCallback, Nothing, 1000, 60000)
 
             AppendLog("Service Started:::" & Now)
 
