@@ -32,8 +32,8 @@
         'ServiceInstaller1
         '
         Me.ServiceInstaller1.Description = "CNAP Downloads"
-        Me.ServiceInstaller1.DisplayName = "DownloaderSvc"
-        Me.ServiceInstaller1.ServiceName = "DownloaderSvc"
+        Me.ServiceInstaller1.DisplayName = "DownloaderSvc2"
+        Me.ServiceInstaller1.ServiceName = "DownloaderSvc2"
         Me.ServiceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic
         '
         'ProjectInstaller

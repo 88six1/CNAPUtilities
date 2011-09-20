@@ -11,6 +11,7 @@ Imports System.Timers
 
 Public Class DownloaderSvc
 
+    Private stime As String
     Private timer1 As System.Threading.Timer
 
     ' Dim oOAuth As CSOAuth
@@ -42,11 +43,17 @@ Public Class DownloaderSvc
             '  sGloDBIP = Config.GetOption("GloDBIP")
             ' sGloDBName = Config.GetOption("GloDBName")
 
+            Dim cfg As New MMConfig
+            MMConfig.Initialize(System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+                    System.Reflection.Assembly.GetExecutingAssembly.Location.LastIndexOf("\") + 1) & "downloadercfg.txt")
+
+            stime = MMConfig.GetOption("DownloadTime")
+
 
             Dim oCallback As New TimerCallback(AddressOf OnTimedEvent)
             timer1 = New System.Threading.Timer(oCallback, Nothing, 1000, 60000)
 
-            AppendLog("Service Started:::" & Now)
+            AppendLog("Service Started:::" & Now & ":::DownloadTime>>" & stime)
 
         Catch ex As Exception
             WriteToErrorLog(ex.Message, ex.StackTrace, "Error on Service Startup")
@@ -64,9 +71,10 @@ Public Class DownloaderSvc
 
         Try
             Dim time As String = TimeString
-            If time.Substring(0, time.LastIndexOf(":")) = "24:00" Then
+            If time.Substring(0, time.LastIndexOf(":")) = stime Then
                 AppendLog("DownloaderStarted:::" & Now)
-                MMDownloader.DownloadFromCNAP()
+                Dim connstr As String = "Data Source=200.200.100.20;Initial Catalog=MidMich;USER ID=sa;Password=noblank2day;"
+                MMDownloader.DownloadFromCNAP(connstr)
             End If
 
         Catch ex As Exception

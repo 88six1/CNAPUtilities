@@ -127,9 +127,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="README" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\DownloaderLibs\DownloaderLibs.vbproj">
       <Project>{AE888BA0-545D-4DF0-A1E4-B3380E4F25BB}</Project>
       <Name>DownloaderLibs</Name>

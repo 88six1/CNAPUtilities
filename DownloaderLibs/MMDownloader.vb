@@ -6,12 +6,15 @@ Imports System.Data.SqlClient
 Imports System.Text
 Imports DownloaderLibs
 Imports System.Net.Mail
+Imports CrystalDecisions.Shared
+
 
 Public Class MMDownloader
 
-    Public Shared Sub DownloadFromCNAP()
+    Private Shared connstr As String
+    Public Shared Sub DownloadFromCNAP(ByVal argconnstr As String)
 
-        Globals.connstr = "Data Source=200.200.100.20;Initial Catalog=MidMich;USER ID=sa;Password=noblank2day;"
+        connstr = argconnstr
 
         Dim req As WebRequest = WebRequest.Create("http://www.cis.state.mi.us/fhs/brs/txt/cdc.txt")
         Dim resp As WebResponse = req.GetResponse()
@@ -40,7 +43,7 @@ Public Class MMDownloader
         Dim oconn As New SqlConnection
         Dim ocomm As New SqlCommand
 
-        oconn = New SqlConnection(Globals.connstr)
+        oconn = New SqlConnection(connstr)
         ocomm = New SqlCommand("", oconn)
 
 
@@ -167,6 +170,13 @@ Public Class MMDownloader
                         MMLogger.WriteToErrorLog("", "", "Error inserting record:")
                     End If
 
+                    ocomm.CommandText = "Select * from CountyList where CountyID = @countyid"
+
+                    ocomm.Parameters.Clear()
+                    ocomm.Parameters.AddWithValue("@countyid", items(12))
+
+                    items(12) = ocomm.ExecuteScalar()
+
                     newProviders.Add("License: " & items(0) & vbCrLf & "Name: " & items(4) & _
                                     vbCrLf & "County: " & items(12) & vbCrLf & "Address: " & items(5) & " " & items(6) & _
                                     vbCrLf & "Zip: " & items(9) & vbCrLf & "Phone: " & items(10) & vbCrLf & "Begin Date: " & items(1) & vbCrLf & vbCrLf)
@@ -184,13 +194,18 @@ Public Class MMDownloader
         MMLogger.AppendLog("Total Records Downloaded: " & recordcount)
         MMLogger.AppendLog("New Records Added: " & newrecordcounter)
 
-        If EmailRecords(newProviders) = 1 Then
+
+        Dim sFileName As String = CreateReport()
+
+        If EmailRecordsThroughGmail(newProviders, sfilename) = 1 Then
             MMLogger.AppendLog("Mail Sent Successfully")
         End If
 
         ocomm.CommandText = "Drop table #tmpProviders"
         ocomm.ExecuteNonQuery()
         oconn.Close()
+
+        'MMDownloader.DownloadFromCNAP()
 
     End Sub
 
@@ -204,10 +219,10 @@ Public Class MMDownloader
             SmtpServer.Host = "mail.midmichigancc.com"
             mail = New MailMessage()
             mail.From = New MailAddress("kevin@midmichigancc.com")
-            ' mail.To.Add("kimhow@midmichigancc.com")
-            mail.To.Add("kevin@merchsystems.com")
+            mail.To.Add("kimhow@midmichigancc.com")
+            'mail.To.Add("kevin@merchsystems.com")
             mail.CC.Add("kevin@merchsystems.com")
-            ' mail.Bcc.Add("cinpie@midmichigancc.com")
+            mail.Bcc.Add("cinpie@midmichigancc.com")
             mail.Subject = "New Providers for " & Now.Date
             Dim sProviders As String = ""
             If newProviders.Count > 0 Then
@@ -223,10 +238,50 @@ Public Class MMDownloader
             SmtpServer.Send(mail)
 
         Catch ex As Exception
-            MMLogger.WriteToErrorLog(ex.Message, ex.StackTrace, "Error Sending Mail")
             Return 0
         End Try
         Return 1
+    End Function
+
+    Public Shared Function EmailRecordsThroughGmail(ByVal sProviders As List(Of String), _
+                                        ByVal sFileNameAttach As String) As Boolean
+
+        Dim MyMailMessage As New MailMessage()
+        MyMailMessage.From = New MailAddress("NewProviders@midmichigancc.com")
+        MyMailMessage.To.Add("kevin@merchsystems.com")
+
+
+        MyMailMessage.Subject = "New Providers for " & Now.ToString("M/d/yyyy")
+        Dim newProviders As String = ""
+
+        If sProviders.Count > 0 Then
+            For Each provider In sProviders
+                newProviders = newProviders & provider
+            Next
+            MyMailMessage.Body = MyMailMessage.Body & newProviders
+            If sFileNameAttach.Length > 0 Then
+                MyMailMessage.Attachments.Add(New System.Net.Mail.Attachment(sFileNameAttach))
+            End If
+        Else
+            MyMailMessage.Body = "No new providers today"
+        End If
+
+        Dim SMTPServer As New SmtpClient("smtp.gmail.com")
+        SMTPServer.Port = 587
+        SMTPServer.Credentials = New System.Net.NetworkCredential("caresharelogs@gmail.com", _
+                                                                  "#careshare142")
+        SMTPServer.EnableSsl = True
+
+        Try
+            SMTPServer.Send(MyMailMessage)
+
+            Return (True)
+        Catch ex As SmtpException
+            MMLogger.WriteToErrorLog(ex.Message, ex.StatusCode.ToString, "Error Sending Email")
+            Return False
+        End Try
+
+
     End Function
 
     Private Shared Function InsertNewRecord( _
@@ -274,5 +329,37 @@ Public Class MMDownloader
         'DLID, dtdownloaded, DCID, LicenseBegin, LicenseEnd, Type, Name, Address, " & _"
         '"City,State,Zip,Phone) Values (@dlid,@dtdownloaded,@dcid,@licensebegin,@licenseend," & _
         '"@type,@name,@address,@city,@state,@zip,@phone
+    End Function
+
+    Private Shared Function CreateReport() As String
+
+        Dim cfg As New MMConfig
+        ' MMConfig.Initialize(System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+        '        System.Reflection.Assembly.GetExecutingAssembly.Location.LastIndexOf("\") + 1) & "downloadercfg.txt")
+        MMConfig.Initialize(System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+               System.Reflection.Assembly.GetExecutingAssembly.Location.IndexOf("DownloaderTestClient")) & "DownloaderSVC\bin\Debug\downloadercfg.txt")
+
+        Dim sDirectory As String = MMConfig.GetOption("ReportDirectory")
+        Dim sFileName As String = Now.ToString("yyyy-MM-dd") & ".pdf"
+        Dim oconn As New SqlConnection(connstr)
+        oconn.Open()
+        Dim ocomm As New SqlCommand("", oconn)
+        ocomm.CommandText = "Select * from Providers left join Countylist on Providers.county = countylist.countyid where (DATEDIFF(d, Providers.dtModified, '" & Now.ToString("M/d/yyyy") & "') = 0) order by dtAdded Desc"
+        Dim daRecruit As New SqlDataAdapter(ocomm)
+
+        Dim myDS As New dsRecruitmentReport
+        daRecruit.Fill(myDS, "Providers")
+        Dim rpt As New rptDailyRecruitment
+        rpt.Database.Tables("Providers").SetDataSource(myDS.Tables("providers"))
+        'rpt.SetDataSource(myDS)
+
+        'CrystalReportViewer1.ReportSource = rpt
+        'CrystalReportViewer1.Show()
+        Dim myDiskFileDestinationOptions As New DiskFileDestinationOptions()
+
+        '  rpt.
+        rpt.ExportToDisk(ExportFormatType.PortableDocFormat, sDirectory & sFileName)
+
+        Return sDirectory & sFileName
     End Function
 End Class
