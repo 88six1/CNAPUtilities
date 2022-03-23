@@ -18,13 +18,12 @@ Public Class DownloaderSvc
 
     Protected Overrides Sub OnStart(ByVal args() As String)
 
-
         System.Threading.Thread.Sleep(6000)
         Try
 
             ' Add code here to start your service. This method should set things
             ' in motion so your service can do its work.
-         
+
 
             'AppendLog("Service Started: " & Now.ToString)
 
@@ -44,7 +43,7 @@ Public Class DownloaderSvc
             ' sGloDBName = Config.GetOption("GloDBName")
 
             Dim cfg As New MMConfig
-            MMConfig.Initialize(System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+            MMConfig.Initialize(System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0,
                     System.Reflection.Assembly.GetExecutingAssembly.Location.LastIndexOf("\") + 1) & "downloadercfg.txt")
 
             stime = MMConfig.GetOption("DownloadTime")

@@ -6,7 +6,9 @@ Public Class MMLogger
 
         Try
 
-            Dim sFileLoc As String = GetAppPath()
+            Dim sFileLoc As String = System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+                System.Reflection.Assembly.GetExecutingAssembly.Location.LastIndexOf("\") + 1)
+            GetAppPath()
             sFileLoc = sFileLoc.Substring(0, sFileLoc.LastIndexOf("\"))
             If Not System.IO.Directory.Exists(sFileLoc & "\Logs\") Then
                 System.IO.Directory.CreateDirectory(sFileLoc & "\Logs\")
@@ -36,7 +38,9 @@ Public Class MMLogger
 
         Try
 
-            Dim sFileLoc As String = GetAppPath()
+            Dim sFileLoc As String = System.Reflection.Assembly.GetExecutingAssembly.Location.Substring(0, _
+                System.Reflection.Assembly.GetExecutingAssembly.Location.LastIndexOf("\") + 1)
+
             sFileLoc = sFileLoc.Substring(0, sFileLoc.LastIndexOf("\"))
 
             If Not System.IO.Directory.Exists(sFileLoc & "\Logs\") Then
